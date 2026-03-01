@@ -3,7 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <title>Ordered Spin Wheel</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+
 <style>
 body {
     margin: 0;
@@ -55,6 +56,7 @@ button:hover {
     color: white;
 }
 
+/* Custom Message */
 .customMessage {
     position: absolute;
     top: 25px;
@@ -78,24 +80,31 @@ button:hover {
     font-size: 15px;
     line-height: 1.65;
     letter-spacing: 0.2px;
-
     white-space: pre-line;
+
+    transition: all 0.8s ease;
+}
+
+/* Hidden state after 2 spins */
+.customMessage.hide {
+    opacity: 0;
+    filter: blur(12px);
+    transform: translateY(-10px);
 }
 </style>
 </head>
 <body>
 
-<!-- EDIT THIS TEXT MANUALLY IN THE CODE -->
-<div class="customMessage">Welcome to the Wheel Of Fortune, and hello Mrs. Venditti,
-    this Spin Wheel has been made by one of your old students, hope you remember me,
-    and hope you enjoy my site!
+<div class="customMessage" id="customMessage">Welcome to the Wheel Of Fortune, and hello Mrs. Venditti,
+this Spin Wheel has been made by one of your old students, hope you remember me,
+and hope you enjoy my site!
 
-    Sherly's Older Brother:
-    - Patrick Molina
+Sherly's Older Brother:
+- Patrick Molina
 </div>
 
 <div class="topRight">
-    <button onclick="setCustomOrder()">‎ </button>
+    <button onclick="setCustomOrder()">Custom Order</button>
 </div>
 
 <canvas id="wheel" width="500" height="500"></canvas>
@@ -108,25 +117,44 @@ button:hover {
 <script>
 const canvas = document.getElementById("wheel");
 const ctx = canvas.getContext("2d");
+const messageBox = document.getElementById("customMessage");
 
-let names = ["Patrick", "Alex", "Sherly", "Taylor", "Chris", "Venditti"];
+let rawOrder = ["Patrick", "Alex", "Sherly", "Taylor", "Chris", "Venditti"];
+let uniqueNames = [];
+let nameToIndex = {};
 let colors = [];
+
 let angle = 0;
 let spinning = false;
 let orderIndex = 0;
+let spinCount = 0;
+
+/* Remove duplicates for wheel display */
+function rebuildWheel() {
+    uniqueNames = [];
+    nameToIndex = {};
+
+    rawOrder.forEach(name => {
+        if (!(name in nameToIndex)) {
+            nameToIndex[name] = uniqueNames.length;
+            uniqueNames.push(name);
+        }
+    });
+
+    generateColors();
+}
 
 function generateColors() {
-    colors = names.map(() =>
+    colors = uniqueNames.map(() =>
         `hsl(${Math.random()*360}, 80%, 60%)`
     );
 }
-generateColors();
 
 function drawWheel() {
     ctx.clearRect(0,0,500,500);
-    const slice = (2 * Math.PI) / names.length;
+    const slice = (2 * Math.PI) / uniqueNames.length;
 
-    for (let i = 0; i < names.length; i++) {
+    for (let i = 0; i < uniqueNames.length; i++) {
         ctx.beginPath();
         ctx.moveTo(250,250);
         ctx.arc(250,250,250, angle + i*slice, angle + (i+1)*slice);
@@ -139,18 +167,21 @@ function drawWheel() {
         ctx.textAlign = "right";
         ctx.fillStyle = "black";
         ctx.font = "bold 18px Arial";
-        ctx.fillText(names[i], 220, 8);
+        ctx.fillText(uniqueNames[i], 220, 8);
         ctx.restore();
     }
 }
 
 function spinWheel() {
-    if (spinning || names.length < 2) return;
+    if (spinning || rawOrder.length < 2) return;
     spinning = true;
 
-    const slice = (2*Math.PI)/names.length;
-    const targetIndex = orderIndex;
-    orderIndex = (orderIndex+1)%names.length;
+    const currentName = rawOrder[orderIndex];
+    const targetIndex = nameToIndex[currentName];
+
+    orderIndex = (orderIndex+1)%rawOrder.length;
+
+    const slice = (2*Math.PI)/uniqueNames.length;
 
     const finalAngle =
         (2*Math.PI*8) +
@@ -172,6 +203,14 @@ function spinWheel() {
             angle = finalAngle % (2*Math.PI);
             drawWheel();
             spinning = false;
+
+            spinCount++;
+            if (spinCount === 2) {
+                messageBox.classList.add("hide");
+                setTimeout(() => {
+                    messageBox.style.display = "none";
+                }, 800);
+            }
         }
     }
 
@@ -179,25 +218,30 @@ function spinWheel() {
 }
 
 function setCustomOrder() {
-    const input = prompt("Enter names in order (comma separated, like this: Patrick, Sherly, etc):");
+    const input = prompt("Enter names or numbers in order (comma separated):");
     if(!input) return;
 
-    const newNames = input.split(",")
+    const newList = input.split(",")
         .map(n => n.trim())
         .filter(n => n.length > 0);
 
-    if(newNames.length < 2) {
-        alert("Need at least 2 names.");
+    if(newList.length < 2) {
+        alert("Need at least 2 values.");
         return;
     }
 
-    names = newNames;
+    rawOrder = newList;
     orderIndex = 0;
     angle = 0;
-    generateColors();
+    spinCount = 0;
+    messageBox.style.display = "block";
+    messageBox.classList.remove("hide");
+
+    rebuildWheel();
     drawWheel();
 }
 
+rebuildWheel();
 drawWheel();
 </script>
 
