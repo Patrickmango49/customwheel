@@ -54,7 +54,7 @@ button:hover {
     color: white;
 }
 
-/* Simple message box */
+/* Simple message box (edit manually in code) */
 .customMessage {
     position: absolute;
     top: 20px;
@@ -71,9 +71,13 @@ button:hover {
 </head>
 <body>
 
-<!-- EDIT THIS TEXT IN THE CODE -->
+<!-- EDIT THIS TEXT MANUALLY IN THE CODE -->
 <div class="customMessage">
     Your message here
+</div>
+
+<div class="topRight">
+    <button onclick="setCustomOrder()">Custom Order</button>
 </div>
 
 <canvas id="wheel" width="500" height="500"></canvas>
@@ -101,6 +105,7 @@ function generateColors() {
 generateColors();
 
 function drawWheel() {
+    ctx.clearRect(0,0,500,500);
     const slice = (2 * Math.PI) / names.length;
 
     for (let i = 0; i < names.length; i++) {
@@ -122,7 +127,7 @@ function drawWheel() {
 }
 
 function spinWheel() {
-    if (spinning) return;
+    if (spinning || names.length < 2) return;
     spinning = true;
 
     const slice = (2*Math.PI)/names.length;
@@ -143,18 +148,36 @@ function spinWheel() {
 
         if (progress < 1) {
             angle = startAngle + (finalAngle-startAngle) * eased;
-            ctx.clearRect(0,0,500,500);
             drawWheel();
             requestAnimationFrame(animate);
         } else {
             angle = finalAngle % (2*Math.PI);
-            ctx.clearRect(0,0,500,500);
             drawWheel();
             spinning = false;
         }
     }
 
     requestAnimationFrame(animate);
+}
+
+function setCustomOrder() {
+    const input = prompt("Enter names in order (comma separated):");
+    if(!input) return;
+
+    const newNames = input.split(",")
+        .map(n => n.trim())
+        .filter(n => n.length > 0);
+
+    if(newNames.length < 2) {
+        alert("Need at least 2 names.");
+        return;
+    }
+
+    names = newNames;
+    orderIndex = 0;
+    angle = 0;
+    generateColors();
+    drawWheel();
 }
 
 drawWheel();
