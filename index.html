@@ -109,7 +109,7 @@ button:hover {
 const canvas = document.getElementById("wheel");
 const ctx = canvas.getContext("2d");
 
-let names = ["Patrick", "Alex", "Jordan", "Taylor", "Chris", "Morgan"];
+let names = ["Patrick", "Alex", "Sherly", "Taylor", "Chris", "Venditti"];
 let colors = [];
 let angle = 0;
 let spinning = false;
@@ -179,7 +179,7 @@ function spinWheel() {
 }
 
 function setCustomOrder() {
-    const input = prompt("Enter names in order (comma separated):");
+    const input = prompt("Enter names in order (comma separated, like this: Patrick, Sherly, etc):");
     if(!input) return;
 
     const newNames = input.split(",")
