@@ -2,32 +2,35 @@
 <html>
 <head>
 <meta charset="UTF-8">
-<title>Ordered Spin Wheel</title>
+<title>Advanced Spin Wheel</title>
 <style>
 body {
     margin: 0;
     height: 100vh;
+    background: linear-gradient(135deg, #000, #111, #fff);
     display: flex;
     justify-content: center;
     align-items: center;
-    background: linear-gradient(135deg, #000, #111, #fff);
     font-family: Arial, sans-serif;
     overflow: hidden;
 }
 
+/* Wheel */
 canvas {
     border-radius: 50%;
     box-shadow: 0 0 60px rgba(255,255,255,0.4);
 }
 
-.topRight {
+/* Spin button */
+.spinContainer {
     position: absolute;
-    top: 20px;
-    right: 20px;
+    bottom: 40px;
+    width: 100%;
+    text-align: center;
 }
 
 button {
-    padding: 10px 20px;
+    padding: 12px 25px;
     border-radius: 30px;
     border: none;
     font-weight: bold;
@@ -37,77 +40,119 @@ button {
 }
 
 button:hover {
-    transform: scale(1.08);
+    transform: scale(1.1);
 }
 
-.bottomCenter {
-    position: absolute;
-    bottom: 40px;
-    text-align: center;
-    width: 100%;
-}
-
+/* Pointer */
 .pointer {
     position: absolute;
-    right: calc(50% - 250px);
-    font-size: 32px;
+    right: calc(50% - 260px);
+    font-size: 34px;
     color: white;
+}
+
+/* Editor box */
+.editorBox {
+    position: absolute;
+    top: 20px;
+    left: 20px;
+    width: 260px;
+    background: rgba(255,255,255,0.1);
+    backdrop-filter: blur(8px);
+    padding: 15px;
+    border-radius: 20px;
+    box-shadow: 0 0 25px rgba(255,255,255,0.2);
+}
+
+textarea {
+    width: 100%;
+    min-height: 60px;
+    resize: none;
+    border: none;
+    border-radius: 15px;
+    padding: 10px;
+    font-size: 14px;
+    outline: none;
+    background: rgba(255,255,255,0.9);
 }
 </style>
 </head>
 <body>
 
-<div class="topRight">
-    <button onclick="setCustomOrder()">Custom Order</button>
+<div class="editorBox">
+    <strong>Edit Names (comma separated):</strong><br><br>
+    <textarea id="nameInput">Patrick, Alex, Jordan, Taylor, Chris, Morgan</textarea>
 </div>
 
-<canvas id="wheel" width="500" height="500"></canvas>
+<canvas id="wheel" width="520" height="520"></canvas>
 <div class="pointer">▶</div>
 
-<div class="bottomCenter">
+<div class="spinContainer">
     <button onclick="spinWheel()">SPIN</button>
 </div>
 
 <script>
 const canvas = document.getElementById("wheel");
 const ctx = canvas.getContext("2d");
+const textarea = document.getElementById("nameInput");
 
-let names = ["Patrick", "Alex", "Jordan", "Taylor", "Chris", "Morgan"];
+let names = [];
 let colors = [];
 let angle = 0;
 let spinning = false;
 let orderIndex = 0;
+
+/* Auto-expand textarea */
+textarea.addEventListener("input", function() {
+    this.style.height = "auto";
+    this.style.height = this.scrollHeight + "px";
+    updateNames();
+});
+
+function updateNames() {
+    const input = textarea.value;
+    const newNames = input.split(",")
+        .map(n => n.trim())
+        .filter(n => n.length > 0);
+
+    if (newNames.length >= 2) {
+        names = newNames;
+        orderIndex = 0;
+        generateColors();
+        draw();
+    }
+}
 
 function generateColors() {
     colors = names.map(() =>
         `hsl(${Math.random()*360}, 80%, 60%)`
     );
 }
-generateColors();
 
-function drawWheel() {
-    const slice = (2 * Math.PI) / names.length;
+function draw() {
+    ctx.clearRect(0,0,520,520);
+    const slice = (2*Math.PI)/names.length;
 
-    for (let i = 0; i < names.length; i++) {
+    for (let i=0;i<names.length;i++) {
         ctx.beginPath();
-        ctx.moveTo(250,250);
-        ctx.arc(250,250,250, angle + i*slice, angle + (i+1)*slice);
+        ctx.moveTo(260,260);
+        ctx.arc(260,260,260, angle + i*slice, angle + (i+1)*slice);
         ctx.fillStyle = colors[i];
         ctx.fill();
 
         ctx.save();
-        ctx.translate(250,250);
+        ctx.translate(260,260);
         ctx.rotate(angle + i*slice + slice/2);
-        ctx.textAlign = "right";
-        ctx.fillStyle = "black";
-        ctx.font = "bold 18px Arial";
-        ctx.fillText(names[i], 220, 8);
+        ctx.textAlign="right";
+        ctx.fillStyle="black";
+        ctx.font="bold 18px Arial";
+        ctx.fillText(names[i], 230, 8);
         ctx.restore();
     }
 }
 
 function spinWheel() {
-    if (spinning) return;
+    if (spinning || names.length < 2) return;
     spinning = true;
 
     const slice = (2*Math.PI)/names.length;
@@ -115,7 +160,7 @@ function spinWheel() {
     orderIndex = (orderIndex+1)%names.length;
 
     const finalAngle =
-        (2*Math.PI*8) + // full spins
+        (2*Math.PI*8) +
         (Math.PI*2 - targetIndex*slice - slice/2);
 
     const startAngle = angle;
@@ -123,47 +168,25 @@ function spinWheel() {
     const startTime = performance.now();
 
     function animate(time) {
-        const progress = (time - startTime)/duration;
-        const eased = 1 - Math.pow(1 - progress, 4);
+        const progress = (time-startTime)/duration;
+        const eased = 1 - Math.pow(1-progress,4);
 
-        if (progress < 1) {
-            angle = startAngle + (finalAngle - startAngle) * eased;
-            ctx.clearRect(0,0,500,500);
-            drawWheel();
+        if(progress<1) {
+            angle = startAngle + (finalAngle-startAngle)*eased;
+            draw();
             requestAnimationFrame(animate);
         } else {
             angle = finalAngle % (2*Math.PI);
-            ctx.clearRect(0,0,500,500);
-            drawWheel();
-            spinning = false;
+            draw();
+            spinning=false;
         }
     }
 
     requestAnimationFrame(animate);
 }
 
-function setCustomOrder() {
-    const input = prompt("Enter names in order (comma separated):");
-    if(!input) return;
-
-    const newNames = input.split(",")
-        .map(n => n.trim())
-        .filter(n => n.length > 0);
-
-    if(newNames.length < 2) {
-        alert("Need at least 2 names.");
-        return;
-    }
-
-    names = newNames;
-    orderIndex = 0;
-    generateColors();
-    angle = 0;
-    ctx.clearRect(0,0,500,500);
-    drawWheel();
-}
-
-drawWheel();
+/* Init */
+updateNames();
 </script>
 
 </body>
